@@ -6,6 +6,7 @@ import {
   fetchAllUserRepos,
   fetchAllUserEvents,
   fetchUserLanguages,
+  fetchContributionCalendar,
   getRateLimitInfo,
 } from "@/lib/github-api";
 import { calculateUserStats, createDateRange } from "@/lib/stats-calculator";
@@ -19,6 +20,7 @@ import type {
   Badge,
   Predictions,
   DateRangePreset,
+  ContributionCalendar,
 } from "@/types/github";
 import { useState, useMemo, useCallback } from "react";
 
@@ -38,15 +40,16 @@ interface UseGitHubDataResult {
 }
 
 async function fetchGitHubData(username: string) {
-  const [user, repos, events] = await Promise.all([
+  const [user, repos, events, contributions] = await Promise.all([
     fetchUser(username),
     fetchAllUserRepos(username),
     fetchAllUserEvents(username),
+    fetchContributionCalendar(username),
   ]);
 
   const languages = await fetchUserLanguages(username, repos);
 
-  return { user, repos, events, languages };
+  return { user, repos, events, languages, contributions };
 }
 
 export function useGitHubData(username: string): UseGitHubDataResult {
@@ -78,7 +81,8 @@ export function useGitHubData(username: string): UseGitHubDataResult {
       data.repos,
       data.events,
       data.languages,
-      range
+      range,
+      data.contributions
     );
 
     const totalXP = calculateXP(stats);

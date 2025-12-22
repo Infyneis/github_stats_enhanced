@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw, AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { fetchUser, fetchAllUserRepos, fetchAllUserEvents, fetchUserLanguages } from "@/lib/github-api";
+import { fetchUser, fetchAllUserRepos, fetchAllUserEvents, fetchUserLanguages, fetchContributionCalendar } from "@/lib/github-api";
 import { calculateUserStats, createDateRange } from "@/lib/stats-calculator";
 import { calculateXP, calculateLevel, calculateBadges } from "@/lib/gamification";
 import { calculatePredictions } from "@/lib/predictions";
@@ -64,10 +64,11 @@ export default function UserProfilePage({
 
     setLoadingOpponent(true);
     try {
-      const [opponentUser, opponentRepos, opponentEvents] = await Promise.all([
+      const [opponentUser, opponentRepos, opponentEvents, opponentContributions] = await Promise.all([
         fetchUser(opponentUsername),
         fetchAllUserRepos(opponentUsername),
         fetchAllUserEvents(opponentUsername),
+        fetchContributionCalendar(opponentUsername),
       ]);
 
       const languages = await fetchUserLanguages(opponentUsername, opponentRepos);
@@ -77,7 +78,8 @@ export default function UserProfilePage({
         opponentRepos,
         opponentEvents,
         languages,
-        range
+        range,
+        opponentContributions
       );
       const xp = calculateXP(opponentStats);
       const opponentLevel = calculateLevel(xp);

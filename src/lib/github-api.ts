@@ -3,6 +3,7 @@ import type {
   GitHubRepo,
   GitHubEvent,
   LanguageStats,
+  ContributionCalendar,
 } from "@/types/github";
 
 const GITHUB_API_BASE = "https://api.github.com";
@@ -170,6 +171,27 @@ export async function fetchUserLanguages(
   }
 
   return aggregatedLanguages;
+}
+
+export async function fetchContributionCalendar(
+  username: string
+): Promise<ContributionCalendar> {
+  const cacheKey = `contributions-${username}`;
+  const cached = getCached<ContributionCalendar>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(`/api/contributions/${encodeURIComponent(username)}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch contributions");
+    }
+    const data = await response.json();
+    setCache(cacheKey, data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching contribution calendar:", error);
+    return { totalContributions: 0, days: [] };
+  }
 }
 
 export function isValidUsername(username: string): boolean {

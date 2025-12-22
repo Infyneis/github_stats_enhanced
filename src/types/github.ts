@@ -91,6 +91,17 @@ export interface LanguageStats {
   [language: string]: number;
 }
 
+export interface ContributionDay {
+  date: string;
+  count: number;
+  level: number; // 0-4 intensity level
+}
+
+export interface ContributionCalendar {
+  totalContributions: number;
+  days: ContributionDay[];
+}
+
 // Computed/Aggregated Types
 
 export interface UserStats {

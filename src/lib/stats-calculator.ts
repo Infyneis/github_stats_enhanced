@@ -10,6 +10,7 @@ import type {
   RepoHealth,
   LanguageStats,
   DateRange,
+  ContributionCalendar,
 } from "@/types/github";
 import {
   format,
@@ -30,7 +31,8 @@ export function calculateUserStats(
   repos: GitHubRepo[],
   events: GitHubEvent[],
   languages: LanguageStats,
-  dateRange: DateRange
+  dateRange: DateRange,
+  contributions?: ContributionCalendar
 ): UserStats {
   // Filter events by date range
   const filteredEvents = events.filter((event) => {
@@ -38,12 +40,25 @@ export function calculateUserStats(
     return isWithinInterval(eventDate, { start: dateRange.start, end: dateRange.end });
   });
 
-  // Calculate commits
+  // Calculate commits from contribution calendar (more accurate) or events (fallback)
   const pushEvents = filteredEvents.filter((e) => e.type === "PushEvent");
-  const totalCommits = pushEvents.reduce(
-    (sum, e) => sum + (e.payload.commits?.length || 0),
-    0
-  );
+
+  // Use contribution calendar for accurate commit count
+  let totalCommits = 0;
+  if (contributions && contributions.days.length > 0) {
+    // Filter contributions by date range
+    const filteredContributions = contributions.days.filter((day) => {
+      const dayDate = parseISO(day.date);
+      return isWithinInterval(dayDate, { start: dateRange.start, end: dateRange.end });
+    });
+    totalCommits = filteredContributions.reduce((sum, day) => sum + day.count, 0);
+  } else {
+    // Fallback to events API
+    totalCommits = pushEvents.reduce(
+      (sum, e) => sum + (e.payload.commits?.length || 0),
+      0
+    );
+  }
 
   // Calculate PRs
   const prEvents = filteredEvents.filter((e) => e.type === "PullRequestEvent");
@@ -70,8 +85,12 @@ export function calculateUserStats(
   const totalStars = ownRepos.reduce((sum, r) => sum + r.stargazers_count, 0);
   const totalForks = ownRepos.reduce((sum, r) => sum + r.forks_count, 0);
 
-  // Contributions by day
-  const contributionsByDay = calculateDailyContributions(filteredEvents, dateRange);
+  // Contributions by day - use calendar data if available
+  const contributionsByDay = calculateDailyContributions(
+    filteredEvents,
+    dateRange,
+    contributions
+  );
 
   // Contributions by hour
   const contributionsByHour = calculateHourlyContributions(pushEvents);
@@ -130,7 +149,8 @@ export function calculateUserStats(
 
 function calculateDailyContributions(
   events: GitHubEvent[],
-  dateRange: DateRange
+  dateRange: DateRange,
+  contributions?: ContributionCalendar
 ): DailyContribution[] {
   const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
   const contributionMap = new Map<string, DailyContribution>();
@@ -148,22 +168,39 @@ function calculateDailyContributions(
     });
   });
 
-  // Count events
+  // First, populate from contribution calendar if available (more accurate for commits)
+  if (contributions && contributions.days.length > 0) {
+    contributions.days.forEach((day) => {
+      const contribution = contributionMap.get(day.date);
+      if (contribution) {
+        contribution.commits = day.count;
+        contribution.count = day.count;
+      }
+    });
+  }
+
+  // Then, overlay events data (for PRs, issues, reviews, and commits if no calendar)
   events.forEach((event) => {
     const dateStr = format(parseISO(event.created_at), "yyyy-MM-dd");
     const contribution = contributionMap.get(dateStr);
     if (!contribution) return;
 
-    contribution.count++;
-
     if (event.type === "PushEvent") {
-      contribution.commits += event.payload.commits?.length || 0;
+      // Only add commits from events if we don't have calendar data
+      if (!contributions || contributions.days.length === 0) {
+        const commitCount = event.payload.commits?.length || 0;
+        contribution.commits += commitCount;
+        contribution.count += commitCount;
+      }
     } else if (event.type === "PullRequestEvent") {
       contribution.prs++;
+      contribution.count++;
     } else if (event.type === "IssuesEvent") {
       contribution.issues++;
+      contribution.count++;
     } else if (event.type === "PullRequestReviewEvent") {
       contribution.reviews++;
+      contribution.count++;
     }
   });
 
