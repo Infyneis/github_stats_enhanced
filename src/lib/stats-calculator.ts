@@ -92,16 +92,18 @@ export function calculateUserStats(
     contributions
   );
 
-  // Contributions by hour
-  const contributionsByHour = calculateHourlyContributions(pushEvents);
+  // Contributions by hour - use ALL events (not filtered) since Events API is limited to ~90 days
+  // This gives us the best picture of productivity patterns
+  const allPushEvents = events.filter((e) => e.type === "PushEvent");
+  const contributionsByHour = calculateHourlyContributions(allPushEvents);
 
-  // Contributions by day of week
-  const contributionsByDayOfWeek = calculateDayOfWeekContributions(pushEvents);
+  // Contributions by day of week - also use all events
+  const contributionsByDayOfWeek = calculateDayOfWeekContributions(allPushEvents);
 
   // Streaks
   const { currentStreak, longestStreak } = calculateStreaks(contributionsByDay);
 
-  // Peak productivity
+  // Peak productivity - based on all events for better pattern detection
   const peakProductivity = determinePeakProductivity(
     contributionsByHour,
     contributionsByDayOfWeek
@@ -213,7 +215,9 @@ function calculateHourlyContributions(pushEvents: GitHubEvent[]): number[] {
   const hours = new Array(24).fill(0);
   pushEvents.forEach((event) => {
     const hour = getHours(parseISO(event.created_at));
-    hours[hour] += event.payload.commits?.length || 0;
+    // Count commits if available, otherwise count the push event itself as 1
+    const count = event.payload.commits?.length || event.payload.size || 1;
+    hours[hour] += count;
   });
   return hours;
 }
@@ -222,7 +226,9 @@ function calculateDayOfWeekContributions(pushEvents: GitHubEvent[]): number[] {
   const days = new Array(7).fill(0);
   pushEvents.forEach((event) => {
     const day = getDay(parseISO(event.created_at));
-    days[day] += event.payload.commits?.length || 0;
+    // Count commits if available, otherwise count the push event itself as 1
+    const count = event.payload.commits?.length || event.payload.size || 1;
+    days[day] += count;
   });
   return days;
 }

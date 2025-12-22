@@ -29,25 +29,26 @@ export function ProductivityHeatmap({
   hourlyData,
   dayOfWeekData,
 }: ProductivityHeatmapProps) {
+  const totalByDay = dayOfWeekData.reduce((sum, val) => sum + val, 0);
+  const totalByHour = hourlyData.reduce((sum, val) => sum + val, 0);
+  const hasData = totalByDay > 0 && totalByHour > 0;
+
   // Create a 7x24 grid (days x hours)
   const gridData = useMemo(() => {
-    const totalByDay = dayOfWeekData.reduce((sum, val) => sum + val, 0);
-    const totalByHour = hourlyData.reduce((sum, val) => sum + val, 0);
-
-    if (totalByDay === 0 || totalByHour === 0) {
+    if (!hasData) {
       return DAYS.map(() => HOURS.map(() => 0));
     }
 
     // Normalize and combine day and hour data
     // This is a simplification - ideally we'd have actual day+hour data
     return DAYS.map((_, dayIndex) => {
-      const dayWeight = dayOfWeekData[dayIndex] / (totalByDay || 1);
+      const dayWeight = dayOfWeekData[dayIndex] / totalByDay;
       return HOURS.map((_, hourIndex) => {
-        const hourWeight = hourlyData[hourIndex] / (totalByHour || 1);
+        const hourWeight = hourlyData[hourIndex] / totalByHour;
         return dayWeight * hourWeight;
       });
     });
-  }, [hourlyData, dayOfWeekData]);
+  }, [hourlyData, dayOfWeekData, hasData, totalByDay, totalByHour]);
 
   const maxValue = useMemo(() => {
     return Math.max(...gridData.flat(), 0.001);
@@ -64,6 +65,30 @@ export function ProductivityHeatmap({
 
   const peakHour = hourlyData.indexOf(Math.max(...hourlyData));
   const peakDay = dayOfWeekData.indexOf(Math.max(...dayOfWeekData));
+
+  if (!hasData) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-lg">Productivity Patterns</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Clock className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <p className="text-muted-foreground mb-2">
+              No recent activity data available
+            </p>
+            <p className="text-sm text-muted-foreground/70 max-w-md">
+              Time-based patterns require recent push events from GitHub&apos;s Events API (last ~90 days).
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
