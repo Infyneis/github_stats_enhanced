@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Badge as BadgeType } from "@/types/github";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
@@ -28,6 +30,8 @@ import {
   Folder,
   Trophy,
   Lock,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface BadgeWallProps {
@@ -60,14 +64,20 @@ const RARITY_LABELS: Record<string, string> = {
 };
 
 export function BadgeWall({ badges }: BadgeWallProps) {
+  const [showAllLocked, setShowAllLocked] = useState(false);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
   const earnedBadges = badges.filter((b) => b.earned);
   const lockedBadges = badges.filter((b) => !b.earned);
+  const displayedLockedBadges = showAllLocked ? lockedBadges : lockedBadges.slice(0, 6);
 
-  // Group by category
-  const categories = Array.from(new Set(badges.map((b) => b.category)));
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 20;
+    setShowScrollIndicator(!isAtBottom);
+  };
 
   return (
-    <Card>
+    <Card className="relative">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -79,7 +89,7 @@ export function BadgeWall({ badges }: BadgeWallProps) {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[500px] overflow-y-auto" onScroll={handleScroll}>
         {/* Earned Badges */}
         <div className="mb-6">
           <h3 className="text-sm font-medium text-muted-foreground mb-3">
@@ -128,13 +138,13 @@ export function BadgeWall({ badges }: BadgeWallProps) {
           )}
         </div>
 
-        {/* Locked Badges (show top 8) */}
+        {/* Locked Badges */}
         <div>
           <h3 className="text-sm font-medium text-muted-foreground mb-3">
-            In Progress
+            In Progress ({lockedBadges.length})
           </h3>
           <div className="space-y-3">
-            {lockedBadges.slice(0, 6).map((badge) => (
+            {displayedLockedBadges.map((badge) => (
               <div
                 key={badge.id}
                 className="flex items-center gap-3 p-3 rounded-lg bg-muted/30"
@@ -158,12 +168,36 @@ export function BadgeWall({ badges }: BadgeWallProps) {
             ))}
           </div>
           {lockedBadges.length > 6 && (
-            <p className="text-xs text-muted-foreground text-center mt-3">
-              +{lockedBadges.length - 6} more badges to unlock
-            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAllLocked(!showAllLocked)}
+              className="w-full mt-3 text-muted-foreground hover:text-foreground"
+            >
+              {showAllLocked ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Show {lockedBadges.length - 6} more badges
+                </>
+              )}
+            </Button>
           )}
         </div>
       </CardContent>
+
+      {/* Scroll indicator */}
+      {showScrollIndicator && (
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none flex items-end justify-center pb-2">
+          <div className="animate-bounce">
+            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

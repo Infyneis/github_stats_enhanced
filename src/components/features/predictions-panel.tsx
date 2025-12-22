@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Predictions, Milestone } from "@/types/github";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -12,6 +13,7 @@ import {
   Flame,
   Calendar,
   Sparkles,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +22,14 @@ interface PredictionsPanelProps {
 }
 
 export function PredictionsPanel({ predictions }: PredictionsPanelProps) {
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 20;
+    setShowScrollIndicator(!isAtBottom);
+  };
+
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case "increasing":
@@ -45,14 +55,14 @@ export function PredictionsPanel({ predictions }: PredictionsPanelProps) {
   };
 
   return (
-    <Card>
+    <Card className="relative">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-muted-foreground" />
           <CardTitle className="text-lg">Predictions & Forecasts</CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 max-h-[500px] overflow-y-auto" onScroll={handleScroll}>
         {/* 30-day commit prediction */}
         <div className="p-4 rounded-xl bg-gradient-to-br from-primary/5 to-purple-500/5 border border-primary/10">
           <div className="flex items-start justify-between mb-3">
@@ -165,6 +175,15 @@ export function PredictionsPanel({ predictions }: PredictionsPanelProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Scroll indicator */}
+      {showScrollIndicator && (
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none flex items-end justify-center pb-2">
+          <div className="animate-bounce">
+            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
