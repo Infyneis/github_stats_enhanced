@@ -79,7 +79,12 @@ const METRICS: ComparisonMetric[] = [
   },
 ];
 
-const COLORS = ["text-blue-500", "text-red-500", "text-green-500", "text-purple-500"];
+const COLORS = [
+  { text: "text-blue-500", border: "border-blue-500", bg: "bg-blue-500", ring: "ring-blue-500/50" },
+  { text: "text-red-500", border: "border-red-500", bg: "bg-red-500", ring: "ring-red-500/50" },
+  { text: "text-green-500", border: "border-green-500", bg: "bg-green-500", ring: "ring-green-500/50" },
+  { text: "text-purple-500", border: "border-purple-500", bg: "bg-purple-500", ring: "ring-purple-500/50" },
+];
 
 export function ComparisonView({
   primaryUser,
@@ -109,88 +114,91 @@ export function ComparisonView({
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-primary/10 to-purple-500/10">
+    <Card>
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Swords className="h-5 w-5" />
+            <Swords className="h-5 w-5 text-muted-foreground" />
             <CardTitle className="text-lg">Battle Mode</CardTitle>
           </div>
-          {opponents.length > 0 && (
-            <Badge variant="secondary" className="gap-1">
+          {opponents.length > 0 && winner && (
+            <Badge variant="outline" className="gap-1.5 bg-yellow-500/10 border-yellow-500/30">
               <Trophy className="h-3 w-3 text-yellow-500" />
-              Winner: @{winner}
+              <span className="text-yellow-600 dark:text-yellow-400">@{winner}</span>
             </Badge>
           )}
         </div>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-6 pt-2">
         {/* User avatars row */}
-        <div className="flex items-center justify-center gap-4 mb-8">
-          {allUsers.map((u, index) => (
-            <div key={u.user.login} className="relative group">
-              <div
-                className={cn(
-                  "absolute -inset-1 rounded-full blur opacity-50",
-                  winner === u.user.login
-                    ? "bg-gradient-to-r from-yellow-400 to-orange-500"
-                    : "bg-gradient-to-r from-gray-400 to-gray-600"
+        <div className="flex items-center justify-center gap-6 mb-8 flex-wrap">
+          {allUsers.map((u, index) => {
+            const isWinner = winner === u.user.login && opponents.length > 0;
+            const color = COLORS[index % COLORS.length];
+            return (
+              <div key={u.user.login} className="relative group flex flex-col items-center">
+                {/* Winner crown */}
+                {isWinner && (
+                  <Trophy className="absolute -top-4 h-5 w-5 text-yellow-500 z-10" />
                 )}
-              />
-              <Avatar className="relative h-16 w-16 border-2 border-background">
-                <AvatarImage src={u.user.avatar_url} />
-                <AvatarFallback>{u.user.login.slice(0, 2)}</AvatarFallback>
-              </Avatar>
-              {index > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => onRemoveOpponent(u.user.login)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-              {winner === u.user.login && (
-                <Trophy className="absolute -top-3 left-1/2 -translate-x-1/2 h-6 w-6 text-yellow-500" />
-              )}
-              <p className="text-center text-sm font-medium mt-2">
-                @{u.user.login}
-              </p>
-              <p className="text-center text-xs text-muted-foreground">
-                Lvl {u.levelInfo.level}
-              </p>
-            </div>
-          ))}
 
-          {/* VS dividers */}
-          {opponents.length > 0 && (
-            <div className="absolute left-1/2 -translate-x-1/2 hidden">
-              <span className="text-xl font-black text-muted-foreground">VS</span>
-            </div>
-          )}
+                {/* Avatar container with assigned color */}
+                <div className={cn(
+                  "relative rounded-full p-1",
+                  color.bg,
+                  isWinner && "ring-2 ring-yellow-400 ring-offset-2 ring-offset-background"
+                )}>
+                  <Avatar className="h-14 w-14 border-2 border-background">
+                    <AvatarImage src={u.user.avatar_url} />
+                    <AvatarFallback className="text-sm">{u.user.login.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+
+                  {/* Remove button - only for opponents */}
+                  {index > 0 && (
+                    <button
+                      onClick={() => onRemoveOpponent(u.user.login)}
+                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/90"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Username & level */}
+                <p className={cn(
+                  "text-sm font-medium mt-2",
+                  color.text
+                )}>
+                  @{u.user.login}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Lvl {u.levelInfo.level}
+                </p>
+              </div>
+            );
+          })}
 
           {/* Add opponent */}
           {opponents.length < 3 && (
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center gap-2">
                 <Input
-                  placeholder="Username"
+                  placeholder="Add opponent..."
                   value={newUsername}
                   onChange={(e) => setNewUsername(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddOpponent()}
-                  className="w-32"
+                  className="w-36 h-9"
                   disabled={isLoading}
                 />
                 <Button
-                  size="icon"
+                  size="sm"
                   onClick={handleAddOpponent}
                   disabled={!newUsername.trim() || isLoading}
+                  className="h-9 px-3"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <span className="text-xs text-muted-foreground">Add opponent</span>
             </div>
           )}
         </div>
@@ -265,26 +273,29 @@ export function ComparisonView({
                       </Badge>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {values.map((v, index) => (
-                        <div
-                          key={v.username}
-                          className={cn(
-                            "text-center p-2 rounded-lg",
-                            v.value === maxValue
-                              ? "bg-primary/10 ring-1 ring-primary"
-                              : "bg-muted/50"
-                          )}
-                        >
-                          <p className={cn("text-lg font-bold", COLORS[index])}>
-                            {metric.format
-                              ? metric.format(v.value)
-                              : v.value.toLocaleString()}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            @{v.username}
-                          </p>
-                        </div>
-                      ))}
+                      {values.map((v, index) => {
+                        const color = COLORS[index % COLORS.length];
+                        return (
+                          <div
+                            key={v.username}
+                            className={cn(
+                              "text-center p-2 rounded-lg",
+                              v.value === maxValue
+                                ? "bg-primary/10 ring-1 ring-primary"
+                                : "bg-muted/50"
+                            )}
+                          >
+                            <p className={cn("text-lg font-bold", color.text)}>
+                              {metric.format
+                                ? metric.format(v.value)
+                                : v.value.toLocaleString()}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              @{v.username}
+                            </p>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
