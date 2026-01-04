@@ -22,7 +22,6 @@
 # ║     -h,--help  Show help message                                          ║
 # ║                                                                           ║
 # ║   Author: Samy DJEMILI                                                    ║
-# ║   Project: #10/365 - Year Coding Challenge                                ║
 # ║                                                                           ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
@@ -102,7 +101,6 @@ print_header() {
     echo -e "${CYAN}║${NC}   🏆 Badges  ⚡ XP & Levels  🔮 Predictions  ⚔️  Battle   ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}                                                           ${CYAN}║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
-    echo -e "              ${PURPLE}#10/365 - Year Coding Challenge${NC}"
     echo ""
 }
 

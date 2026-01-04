@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">📊 GitStats Enhanced</h1>
-<h3 align="center">Beautiful GitHub analytics with gamification & predictions <code>#10/365 - Year Coding Challenge</code></h3>
+<h3 align="center">Beautiful GitHub analytics with gamification & predictions</h3>
 
 <p align="center">
   <em>Discover your coding patterns, earn achievements, and showcase your developer journey</em>
@@ -35,7 +35,6 @@
 A modern **GitHub analytics dashboard** that transforms boring stats into an engaging experience. View beautiful visualizations of your contributions, earn achievement badges, level up with XP, get statistical predictions, and battle other developers in head-to-head comparisons!
 
 <p align="center">
-  <img src="https://img.shields.io/badge/🚀_Year_Coding_Challenge-Project_%2310-22C55E?style=for-the-badge" alt="Year Coding Challenge" />
   <img src="https://img.shields.io/badge/📅_Completed-December_21,_2024-10B981?style=for-the-badge" alt="Completed" />
   <img src="https://img.shields.io/badge/🎨_Theme-Modern_Glassmorphism-3B82F6?style=for-the-badge" alt="Theme" />
 </p>
